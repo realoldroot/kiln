@@ -10,6 +10,14 @@ interface ModelsCache {
   openrouter: ModelInfo[]
   ollama: ModelInfo[]
   fetchedAt: number
+  /** which keys/endpoint the cache was fetched with */
+  signature?: string
+}
+
+/** Models are only fetched for providers with a key configured. */
+export function modelsSignature(): string {
+  const s = getSettings()
+  return `${s.openrouterKey ? 1 : 0}:${s.ollamaKey ? 1 : 0}:${s.ollamaBaseUrl}`
 }
 
 function loadCache(): ModelsCache {
@@ -22,10 +30,7 @@ function loadCache(): ModelsCache {
   return { openrouter: [], ollama: [], fetchedAt: 0 }
 }
 
-interface ModelsState {
-  openrouter: ModelInfo[]
-  ollama: ModelInfo[]
-  fetchedAt: number
+interface ModelsState extends ModelsCache {
   loading: boolean
   errors: Partial<Record<ProviderId, string>>
   refresh: (force?: boolean) => Promise<void>
@@ -37,19 +42,24 @@ export const useModels = create<ModelsState>()((set, get) => ({
   errors: {},
 
   refresh: async (force = false) => {
-    const { fetchedAt, loading } = get()
+    const { fetchedAt, loading, signature } = get()
     const s = getSettings()
-    // Live-fetch, but avoid hammering: reuse a cache younger than 15 min.
+    const sig = modelsSignature()
     if (loading) return
-    if (!force && Date.now() - fetchedAt < 15 * 60_000) return
+    // Live-fetch, but avoid hammering: reuse a cache younger than 15 min —
+    // unless the configured keys/endpoint changed since it was fetched.
+    if (!force && sig === signature && Date.now() - fetchedAt < 15 * 60_000)
+      return
     set({ loading: true })
     const errors: Partial<Record<ProviderId, string>> = {}
 
     const [or, ol] = await Promise.all([
-      fetchOpenRouterModels().catch((e) => {
-        errors.openrouter = e.message
-        return null
-      }),
+      s.openrouterKey
+        ? fetchOpenRouterModels().catch((e) => {
+            errors.openrouter = e.message
+            return null
+          })
+        : Promise.resolve(null),
       s.ollamaKey
         ? fetchOllamaModels().catch((e) => {
             errors.ollama = e.message
@@ -59,9 +69,11 @@ export const useModels = create<ModelsState>()((set, get) => ({
     ])
 
     const next: ModelsCache = {
-      openrouter: or ?? get().openrouter,
-      ollama: ol ?? (s.ollamaKey ? get().ollama : []),
+      // on fetch failure keep the previous list; without a key show nothing
+      openrouter: s.openrouterKey ? (or ?? get().openrouter) : [],
+      ollama: s.ollamaKey ? (ol ?? get().ollama) : [],
       fetchedAt: Date.now(),
+      signature: sig,
     }
     try {
       localStorage.setItem(CACHE_KEY, JSON.stringify(next))

@@ -263,6 +263,10 @@
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
 }
+/* safe-area inset plus breathing room, for surfaces that sit on the screen edge */
+.pb-safe-plus {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 0.625rem);
+}
 
 @keyframes pulse-dot {
   0%,

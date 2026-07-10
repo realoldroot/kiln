@@ -66,6 +66,7 @@ const page = await ctx.newPage()
 await page.addInitScript(() => {
   const models = {
     fetchedAt: Date.now(),
+    signature: "1:0:/api/ollama",
     ollama: [],
     openrouter: [
       {

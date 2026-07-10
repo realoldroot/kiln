@@ -162,7 +162,7 @@ export function ModelPicker({
             )}
           </CommandList>
         </Command>
-        <div className="border-t border-border px-4 py-2.5 pb-safe text-[12px] text-muted-foreground">
+        <div className="border-t border-border px-4 pt-2.5 pb-safe-plus text-[12px] text-muted-foreground">
           {!hasOllamaKey && !hasOpenrouterKey ? (
             <button
               className="flex items-center gap-1.5 text-primary"

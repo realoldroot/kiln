@@ -19,10 +19,12 @@ Built with React 19, Vite 8, Tailwind CSS 4, shadcn/ui, Dexie and Workbox.
   copy / download / open.
 - **Attachments** — photos (auto-downscaled), text/code files (inlined), and
   PDFs (OpenRouter models only).
-- **Providers** — OpenRouter and Ollama cloud, with live model fetching,
-  per-provider grouping, search, context length, pricing, and capability
-  badges (vision / reasoning / image output). API keys are stored in
-  localStorage on the device and go only to the provider.
+- **Providers** — OpenRouter and Ollama cloud, with live model fetching
+  (only for providers whose key you've configured), per-provider grouping,
+  search, context length, pricing, and capability badges (vision /
+  reasoning / image output). API keys are stored in localStorage on the
+  device and go only to the provider. Adding or changing a key refreshes
+  the model list immediately.
 - **Reasoning effort** — Auto/Low/Medium/High selector for reasoning models
   (OpenRouter `reasoning.effort`, Ollama `think` levels); thinking traces
   shown in a collapsible "Thought for Ns" block.
@@ -85,11 +87,16 @@ desktop testing only.
 
 ### The Ollama proxy
 
-`ollama.com` doesn't send CORS headers, so browsers can't call it directly.
-The bundled nginx forwards `/api/ollama/*` → `https://ollama.com/*`
-(streaming enabled), and the app's default Ollama endpoint is `/api/ollama`.
-Nothing to configure. You can also point the endpoint at a LAN Ollama
-instance (`http://192.168.x.x:11434`) if you export `OLLAMA_ORIGINS` there.
+Ollama cloud doesn't send CORS headers, so browsers can't call it directly —
+verified against both hosts (`ollama.com`, `api.ollama.com`) and both API
+styles (native `/api/chat`, OpenAI-compatible `/v1/chat/completions`):
+every preflight is rejected (405/301 with no `Access-Control-Allow-*`
+headers), and authenticated requests always preflight because of the
+`Authorization` header. The bundled nginx therefore forwards
+`/api/ollama/*` → `https://ollama.com/*` (streaming enabled), and the app's
+default Ollama endpoint is `/api/ollama`. Nothing to configure. You can
+also point the endpoint at a LAN Ollama instance
+(`http://192.168.x.x:11434`) if you export `OLLAMA_ORIGINS` there.
 OpenRouter and Tavily are called directly from the device.
 
 ## Development

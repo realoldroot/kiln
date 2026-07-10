@@ -34,7 +34,7 @@ export function SkillsSheet({
             Extra instructions the assistant follows in this chat.
           </DrawerDescription>
         </DrawerHeader>
-        <div className="max-h-[50dvh] overflow-y-auto px-4 pb-safe">
+        <div className="max-h-[50dvh] overflow-y-auto px-4 pb-safe-plus">
           {skills.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-8 text-center">
               <SparklesIcon className="size-8 text-muted-foreground/50" />

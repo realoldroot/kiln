@@ -119,7 +119,7 @@ export function Composer(props: ComposerProps) {
   }
 
   return (
-    <div className="px-3 pb-safe">
+    <div className="px-3 pt-1 pb-safe-plus">
       <div className="rounded-[26px] border border-border bg-card shadow-[0_2px_16px_rgba(0,0,0,0.06)] dark:shadow-none">
         {attachments.length > 0 && (
           <div className="flex gap-2 overflow-x-auto px-3 pt-3 scrollbar-none">

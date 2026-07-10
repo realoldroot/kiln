@@ -74,9 +74,10 @@ function paintDemoImage(hueA: number, hueB: number, label: string): string {
 }
 
 export async function seedDemo(): Promise<void> {
-  localStorage.setItem("amber-models-cache", JSON.stringify(MODELS))
-  const { useModels } = await import("@/stores/models")
-  useModels.setState({ ...MODELS })
+  const { useModels, modelsSignature } = await import("@/stores/models")
+  const cache = { ...MODELS, signature: modelsSignature() }
+  localStorage.setItem("amber-models-cache", JSON.stringify(cache))
+  useModels.setState(cache)
 
   const settingsRaw = localStorage.getItem("amber-settings")
   const settings = settingsRaw ? JSON.parse(settingsRaw) : { state: {}, version: 0 }

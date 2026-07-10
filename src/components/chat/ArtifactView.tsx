@@ -172,7 +172,7 @@ export function ArtifactViewer({
           )}
         </div>
 
-        <div className="flex items-center gap-2 border-t border-border px-3 py-2 pb-safe">
+        <div className="flex items-center gap-2 border-t border-border px-3 pt-2 pb-safe-plus">
           <Button
             variant="outline"
             size="sm"

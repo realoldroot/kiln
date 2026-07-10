@@ -243,7 +243,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         )}
       </div>
 
-      <div className="flex items-center gap-1 border-t border-sidebar-border px-2 py-2 pb-safe">
+      <div className="flex items-center gap-1 border-t border-sidebar-border px-2 pt-2 pb-safe-plus">
         <Button
           variant="ghost"
           size="sm"
