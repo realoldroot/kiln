@@ -86,6 +86,27 @@ await shot(page, "11-settings-skills-light")
 await page.goto(`${BASE}/images/demo-images`, { waitUntil: "networkidle" })
 await shot(page, "12-images-light")
 
+// effort menu
+await page.goto(`${BASE}/`, { waitUntil: "networkidle" })
+await page.getByText("Effort", { exact: true }).click()
+await shot(page, "17-effort-menu-light")
+await page.keyboard.press("Escape")
+
+// skills sheet from ＋ menu
+await page.getByLabel("More options").click()
+await page.getByText("Skills", { exact: true }).click()
+await page.waitForTimeout(500)
+await shot(page, "18-skills-sheet-light")
+await page.keyboard.press("Escape")
+
+// delete confirmation dialog
+await page.goto(`${BASE}/chat/demo-kyoto`, { waitUntil: "networkidle" })
+await page.getByLabel("Chat options").click()
+await page.getByText("Delete chat").click()
+await page.waitForTimeout(400)
+await shot(page, "19-delete-dialog-light")
+await page.keyboard.press("Escape")
+
 await ctx.close()
 
 // ---------- dark mode ----------
@@ -98,6 +119,11 @@ await page.goto(`${BASE}/chat/demo-kyoto`, { waitUntil: "networkidle" })
 await shot(page, "14-chat-markdown-dark")
 await page.goto(`${BASE}/chat/demo-coffee`, { waitUntil: "networkidle" })
 await shot(page, "15-chat-artifact-dark")
+await page.getByText("Ember & Oak — Landing page").click()
+await page.waitForTimeout(900)
+await page.getByRole("tab", { name: "Source" }).click()
+await shot(page, "20-artifact-source-dark")
+await page.keyboard.press("Escape")
 await page.getByLabel("Open menu").click()
 await shot(page, "16-sidebar-dark")
 await ctx.close()
