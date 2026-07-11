@@ -70,6 +70,9 @@ export function Composer(props: ComposerProps) {
 
   const modelInfo = findModel(props.modelRef)
   const efforts = effortChoices(modelInfo)
+  // capability-aware attachments; unknown model (not in cache) = permissive
+  const canVision = modelInfo ? !!modelInfo.vision : true
+  const canPdf = props.modelRef?.provider === "openrouter"
   const isCommand = !props.imageMode && !!parseSlashCommand(text.trim())
   const canSend =
     !props.disabled &&
@@ -124,11 +127,35 @@ export function Composer(props: ComposerProps) {
       return
     }
     if (!canSend) return
+    // model may have changed since attaching — re-check capabilities
+    const blocked = attachments.find(
+      (a) =>
+        (a.kind === "image" && !canVision && !props.imageMode) ||
+        (a.kind === "pdf" && !canPdf),
+    )
+    if (blocked) {
+      toast.error(
+        blocked.kind === "image"
+          ? `${displayModelName(props.modelRef)} can't view images — remove ${blocked.name} or pick a vision model`
+          : `PDFs only work with OpenRouter models — remove ${blocked.name} or switch model`,
+      )
+      return
+    }
     props.onSend(trimmed, attachments)
     setText("")
     setAttachments([])
     taRef.current?.focus()
   }
+
+  const acceptTypes = props.imageMode
+    ? "image/*"
+    : [
+        canVision ? "image/*" : "",
+        canPdf ? ".pdf" : "",
+        ".txt,.md,.markdown,.csv,.json,.js,.mjs,.ts,.tsx,.jsx,.py,.rb,.go,.rs,.java,.kt,.c,.h,.cpp,.cs,.swift,.html,.css,.xml,.yaml,.yml,.toml,.sh,.sql,.log",
+      ]
+        .filter(Boolean)
+        .join(",")
 
   const slashPrefix = !props.imageMode
     ? /^\/([a-z]*)$/i.exec(text)?.[1]?.toLowerCase()
@@ -143,6 +170,10 @@ export function Composer(props: ComposerProps) {
     for (const file of Array.from(files)) {
       try {
         if (file.type.startsWith("image/")) {
+          if (!canVision && !props.imageMode)
+            throw new Error(
+              `${displayModelName(props.modelRef)} can't view images — pick a vision model`,
+            )
           const raw = await readFileAsDataUrl(file)
           const dataUrl = await downscaleImage(raw)
           setAttachments((a) => [
@@ -150,6 +181,10 @@ export function Composer(props: ComposerProps) {
             { id: uid(), name: file.name, mime: file.type, size: file.size, kind: "image", dataUrl },
           ])
         } else if (file.type === "application/pdf") {
+          if (!canPdf)
+            throw new Error(
+              "PDFs only work with OpenRouter models — Ollama's API has no document input",
+            )
           if (file.size > 15 * 1024 * 1024) throw new Error("PDF too large (15 MB max)")
           const dataUrl = await readFileAsDataUrl(file)
           setAttachments((a) => [
@@ -255,7 +290,7 @@ export function Composer(props: ComposerProps) {
             type="file"
             multiple
             hidden
-            accept="image/*,.pdf,.txt,.md,.markdown,.csv,.json,.js,.mjs,.ts,.tsx,.jsx,.py,.rb,.go,.rs,.java,.kt,.c,.h,.cpp,.cs,.swift,.html,.css,.xml,.yaml,.yml,.toml,.sh,.sql,.log"
+            accept={acceptTypes}
             onChange={(e) => void addFiles(e.target.files)}
           />
           {props.imageMode ? (
@@ -282,7 +317,7 @@ export function Composer(props: ComposerProps) {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" side="top">
                 <DropdownMenuItem onClick={() => fileRef.current?.click()}>
-                  <PaperclipIcon /> Photos & files
+                  <PaperclipIcon /> {canVision ? "Photos & files" : "Attach files"}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSkillsOpen(true)}>
                   <SparklesIcon /> Skills

@@ -33,8 +33,13 @@ Built with React 19, Vite 8, Tailwind CSS 4, shadcn/ui, Dexie and Workbox.
   every artefact across all chats — searchable, filterable by type, with a
   jump back to the source chat. (The wire tag stays `<artifact>` — US
   spelling is the convention models know.)
-- **Attachments** — photos (auto-downscaled), text/code files (inlined), and
-  PDFs (OpenRouter models only).
+- **Attachments** — capability-aware, driven by each model's provider
+  metadata: photos (auto-downscaled) for vision models on **both**
+  providers — Ollama takes base64 images natively per its vision API;
+  text/code files (inlined) for any model; PDFs for OpenRouter models
+  (Ollama's API has no document input). The picker only offers what the
+  selected model accepts, and switching to an incompatible model warns
+  before sending.
 - **Providers** — OpenRouter and Ollama cloud, with live model fetching
   (only for providers whose key you've configured), per-provider grouping,
   search, context length, pricing, and capability badges (vision /
@@ -199,8 +204,9 @@ Export/Import, so a future backend can round-trip it.
 - **Notifications on iOS** require the app to be installed to the Home
   Screen (iOS 16.4+), and Apple only reliably shows service-worker
   notifications for pushes; on Android/desktop they work as expected.
-- **PDF attachments** are supported on OpenRouter models only (Ollama's API
-  has no file input).
+- **PDF attachments** are supported on OpenRouter models only — Ollama's
+  API accepts images (vision models) but has no document/file input, so
+  the app doesn't offer PDFs when an Ollama model is selected.
 - Keys live in localStorage: anyone with your unlocked phone and this app
   open can use them. That's the standard trade-off for serverless PWAs.
 
