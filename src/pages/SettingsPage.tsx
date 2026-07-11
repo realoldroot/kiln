@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useLiveQuery } from "dexie-react-hooks"
 import { useNavigate } from "react-router-dom"
 import {
   ArrowLeftIcon,
@@ -209,34 +210,80 @@ function SkillDialog({
   )
 }
 
+/** Sum the actual bytes of chat data (text + base64 media) in IndexedDB. */
+async function measureAppData() {
+  let bytes = 0
+  let messages = 0
+  const chats = await db.chats.count()
+  await db.messages.each((m) => {
+    messages++
+    bytes += (m.content?.length ?? 0) + (m.reasoning?.length ?? 0)
+    for (const a of m.attachments ?? [])
+      bytes += (a.dataUrl?.length ?? 0) + (a.text?.length ?? 0)
+    for (const im of m.images ?? []) bytes += im.dataUrl.length
+    for (const s of m.steps ?? []) bytes += s.result?.length ?? 0
+    for (const v of m.versions ?? []) {
+      bytes += (v.content?.length ?? 0) + (v.reasoning?.length ?? 0)
+      for (const im of v.images ?? []) bytes += im.dataUrl.length
+    }
+  })
+  return { bytes, chats, messages }
+}
+
 function StorageInfo() {
-  const [info, setInfo] = useState<{
+  // live: re-measures automatically whenever chats/messages change
+  const appData = useLiveQuery(measureAppData, [])
+  const [browser, setBrowser] = useState<{
     used: number
     quota: number
     persisted: boolean
   } | null>(null)
+
   useEffect(() => {
-    void (async () => {
+    const read = async () => {
       try {
         const est = await navigator.storage?.estimate?.()
         const persisted = (await navigator.storage?.persisted?.()) ?? false
-        setInfo({ used: est?.usage ?? 0, quota: est?.quota ?? 0, persisted })
+        setBrowser({ used: est?.usage ?? 0, quota: est?.quota ?? 0, persisted })
       } catch {
         /* unsupported */
       }
-    })()
-  }, [])
-  if (!info) return null
+    }
+    void read()
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void read()
+    }
+    document.addEventListener("visibilitychange", onVisible)
+    return () => document.removeEventListener("visibilitychange", onVisible)
+    // re-read the browser estimate when app data changes (e.g. delete all)
+  }, [appData?.bytes])
+
   return (
-    <p className="text-[12px] text-muted-foreground">
-      Storage used: {formatBytes(info.used)}
-      {info.quota ? ` of ~${formatBytes(info.quota)}` : ""} ·{" "}
-      {info.persisted ? (
-        <span className="text-primary">protected from eviction ✓</span>
-      ) : (
-        "eviction protection not granted (install the app to improve this)"
+    <div className="space-y-0.5 text-[12px] text-muted-foreground">
+      {appData && (
+        <p>
+          Chat data: ~{formatBytes(appData.bytes)} ({appData.chats} chat
+          {appData.chats === 1 ? "" : "s"}, {appData.messages} message
+          {appData.messages === 1 ? "" : "s"})
+        </p>
       )}
-    </p>
+      {browser && (
+        <p>
+          Browser storage: {formatBytes(browser.used)}
+          {browser.quota ? ` of ~${formatBytes(browser.quota)}` : ""} ·{" "}
+          {browser.persisted ? (
+            <span className="text-primary">protected from eviction ✓</span>
+          ) : (
+            "eviction protection not granted (install the app to improve this)"
+          )}
+        </p>
+      )}
+      <p className="text-muted-foreground/70">
+        The browser figure covers the whole app — including the ~1 MB offline
+        cache — and can lag after deletions until the browser compacts its
+        database. “Chat data” is measured directly and updates instantly.
+      </p>
+    </div>
   )
 }
 
