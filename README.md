@@ -91,7 +91,18 @@ Or without compose:
 
 ```bash
 docker build -t kiln .
-docker run -d --name kiln -p 8080:80 --restart unless-stopped kiln
+docker run -d --name kiln -p 8080:8080 --restart unless-stopped kiln
+```
+
+### Prebuilt image (GHCR)
+
+CI publishes `ghcr.io/itbm/kiln` on every push to `main`, tagged `latest`
+and with the contents of `VERSION` (amd64 + arm64). Pull requests build the
+image as a check but never push. To use it, swap `build: .` in
+docker-compose.yml for:
+
+```yaml
+    image: ghcr.io/itbm/kiln:latest   # or a pinned version, e.g. :0.2.0
 ```
 
 Then on your phone, open the URL, and:

@@ -10,7 +10,9 @@ for the feature overview; this file is about working on the code.
   deployed. It is the single source of truth: Vite bakes it in at build
   time (`__APP_VERSION__`, also during `docker build`) and it is shown at
   the bottom of Settings — it's how the user checks a deploy actually
-  landed. Patch for fixes, minor for features.
+  landed. Patch for fixes, minor for features. CI also tags the published
+  image with it (`ghcr.io/itbm/kiln:<VERSION>` + `:latest` on pushes to
+  `main`; PRs only test the build) — see `.github/workflows/docker.yml`.
 - Run the checks below and make sure they pass before pushing.
 
 ## Commands
