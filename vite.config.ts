@@ -21,7 +21,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "prompt",
-      includeAssets: ["icons/apple-touch-icon.png"],
+      includeAssets: ["apple-touch-icon.png"],
       manifest: {
         name: "Kiln — AI Chat",
         short_name: "Kiln",

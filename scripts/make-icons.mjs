@@ -14,11 +14,18 @@ const maskableSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 51
     .replace("</svg>", "")}</g>
 </svg>`
 
+// apple-touch-icon: iOS wants an opaque, full-bleed square (it applies the
+// rounded-corner mask itself; transparent corners get composited on black).
+const appleSvg = svg.replace('rx="116"', 'rx="0"')
+
 const targets = [
   { file: "public/icons/icon-192.png", size: 192, svg },
   { file: "public/icons/icon-512.png", size: 512, svg },
   { file: "public/icons/icon-512-maskable.png", size: 512, svg: maskableSvg },
-  { file: "public/icons/apple-touch-icon.png", size: 180, svg },
+  // Served from the site root: iOS falls back to /apple-touch-icon.png when
+  // it ignores the <link> tag (a long-standing Safari quirk), so the file
+  // must live there, not in /icons/.
+  { file: "public/apple-touch-icon.png", size: 180, svg: appleSvg },
 ]
 
 const browser = await chromium.launch({
