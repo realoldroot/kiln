@@ -40,6 +40,18 @@ export async function fetchOllamaModels(): Promise<ModelInfo[]> {
   const names: string[] = (json.models ?? []).map((m: any) => m.name ?? m.model)
 
   // /api/show gives accurate capability flags; fall back to heuristics.
+  // Ollama's API doesn't report think *levels* — only gpt-oss models take
+  // low/medium/high; other thinking models are on/off via `think: bool`.
+  const applyThinking = (info: ModelInfo, thinking: boolean) => {
+    info.reasoning = thinking
+    if (!thinking) return
+    if (/gpt-oss/i.test(info.id)) {
+      info.efforts = ["high", "medium", "low"]
+      info.defaultEffort = "medium"
+    } else {
+      info.reasoningToggle = true
+    }
+  }
   const models = await Promise.all(
     names.map(async (name): Promise<ModelInfo> => {
       const info: ModelInfo = {
@@ -47,9 +59,12 @@ export async function fetchOllamaModels(): Promise<ModelInfo[]> {
         provider: "ollama",
         name,
         vision: /vision|llava|vl|gemma3|mistral-small/i.test(name),
-        reasoning: /gpt-oss|deepseek|qwen3|thinking|r1|magistral/i.test(name),
         tools: true,
       }
+      applyThinking(
+        info,
+        /gpt-oss|deepseek|qwen3|thinking|r1|magistral/i.test(name),
+      )
       try {
         const res = await fetch(`${base()}/api/show`, {
           method: "POST",
@@ -61,8 +76,10 @@ export async function fetchOllamaModels(): Promise<ModelInfo[]> {
           const caps: string[] = detail.capabilities ?? []
           if (caps.length) {
             info.vision = caps.includes("vision")
-            info.reasoning = caps.includes("thinking")
             info.tools = caps.includes("tools")
+            info.efforts = undefined
+            info.reasoningToggle = undefined
+            applyThinking(info, caps.includes("thinking"))
           }
           const ctx = detail.model_info?.[
             Object.keys(detail.model_info ?? {}).find((k) =>
@@ -108,7 +125,10 @@ export async function* streamOllama(
       messages: toApiMessages(req.messages),
       stream: true,
     }
-    if (withThink && req.effort !== "auto") body.think = req.effort
+    if (withThink && req.effort !== "auto") {
+      body.think =
+        req.effort === "on" ? true : req.effort === "off" ? false : req.effort
+    }
     if (req.tools?.length) {
       body.tools = req.tools.map((t) => ({
         type: "function",

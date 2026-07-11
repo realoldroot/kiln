@@ -26,6 +26,7 @@ import {
   SLASH_COMMANDS,
   type SlashCommand,
 } from "@/lib/commands"
+import { coerceEffort, effortChoices, effortLabel } from "@/lib/effort"
 import type { Attachment, Effort, ModelRef } from "@/lib/types"
 import {
   cn,
@@ -37,8 +38,6 @@ import {
 } from "@/lib/utils"
 import { displayModelName, findModel } from "@/stores/models"
 import { isTouchDevice } from "@/hooks/use-media"
-
-const EFFORTS: Effort[] = ["auto", "low", "medium", "high"]
 
 export interface ComposerProps {
   placeholder?: string
@@ -70,7 +69,7 @@ export function Composer(props: ComposerProps) {
   const fileRef = useRef<HTMLInputElement>(null)
 
   const modelInfo = findModel(props.modelRef)
-  const supportsEffort = modelInfo?.reasoning ?? false
+  const efforts = effortChoices(modelInfo)
   const isCommand = !props.imageMode && !!parseSlashCommand(text.trim())
   const canSend =
     !props.disabled &&
@@ -91,11 +90,16 @@ export function Composer(props: ComposerProps) {
       setPickerOpen(true)
     } else if (cmd.name === "effort") {
       const e = (arg ?? "").toLowerCase() as Effort
-      if (EFFORTS.includes(e)) {
+      const valid = efforts.map((c) => c.value)
+      if (!valid.length) {
+        toast.error("This model has no effort options")
+        return
+      }
+      if (valid.includes(e)) {
         props.onEffortChange(e)
-        toast.success(`Reasoning effort: ${e}`)
+        toast.success(`Reasoning effort: ${effortLabel(e)}`)
       } else {
-        toast.error("Usage: /effort auto|low|medium|high")
+        toast.error(`Usage: /effort ${valid.join("|")}`)
         return
       }
     } else if (props.onCommand) {
@@ -309,7 +313,7 @@ export function Composer(props: ComposerProps) {
             <ChevronDownIcon className="size-3.5 shrink-0" />
           </button>
 
-          {supportsEffort && !props.imageMode && (
+          {efforts.length > 0 && !props.imageMode && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -321,19 +325,19 @@ export function Composer(props: ComposerProps) {
                   )}
                 >
                   <GaugeIcon className="size-3.5" />
-                  <span className="capitalize">
-                    {props.effort === "auto" ? "Effort" : props.effort}
+                  <span className="max-w-24 truncate">
+                    {props.effort === "auto" ? "Effort" : effortLabel(props.effort)}
                   </span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" side="top">
-                {EFFORTS.map((e) => (
+                {efforts.map((c) => (
                   <DropdownMenuItem
-                    key={e}
-                    onClick={() => props.onEffortChange(e)}
-                    className={cn("capitalize", e === props.effort && "bg-accent")}
+                    key={c.value}
+                    onClick={() => props.onEffortChange(c.value)}
+                    className={cn(c.value === props.effort && "bg-accent")}
                   >
-                    {e === "auto" ? "Auto (model default)" : e}
+                    {c.label}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -375,7 +379,12 @@ export function Composer(props: ComposerProps) {
         open={pickerOpen}
         onOpenChange={setPickerOpen}
         value={props.modelRef}
-        onSelect={(ref) => props.onModelChange(ref)}
+        onSelect={(ref, info) => {
+          props.onModelChange(ref)
+          // drop an effort the newly selected model doesn't offer
+          const coerced = coerceEffort(info, props.effort)
+          if (coerced !== props.effort) props.onEffortChange(coerced)
+        }}
         imageOnly={props.imageMode}
       />
       {props.onSkillIdsChange && (

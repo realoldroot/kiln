@@ -26,6 +26,8 @@ export async function fetchOpenRouterModels(): Promise<ModelInfo[]> {
     const sp: string[] = m.supported_parameters ?? []
     const inMods: string[] = m.architecture?.input_modalities ?? []
     const outMods: string[] = m.architecture?.output_modalities ?? []
+    // per-model reasoning metadata: supported_efforts / mandatory / defaults
+    const r = m.reasoning ?? null
     return {
       id: m.id,
       provider: "openrouter",
@@ -33,7 +35,11 @@ export async function fetchOpenRouterModels(): Promise<ModelInfo[]> {
       ctx: m.context_length ?? undefined,
       vision: inMods.includes("image"),
       imageOutput: outMods.includes("image"),
-      reasoning: sp.includes("reasoning"),
+      reasoning: !!r || sp.includes("reasoning"),
+      efforts: r?.supported_efforts?.length ? r.supported_efforts : undefined,
+      reasoningToggle:
+        !!r && !r.supported_efforts?.length && r.mandatory === false,
+      defaultEffort: r?.default_effort ?? undefined,
       tools: sp.includes("tools"),
       pricing: m.pricing
         ? {
@@ -97,7 +103,9 @@ export async function* streamOpenRouter(
     messages: toApiMessages(req.messages),
     stream: true,
   }
-  if (req.effort !== "auto") body.reasoning = { effort: req.effort }
+  if (req.effort === "on") body.reasoning = { enabled: true }
+  else if (req.effort === "off") body.reasoning = { enabled: false }
+  else if (req.effort !== "auto") body.reasoning = { effort: req.effort }
   if (req.tools?.length) {
     body.tools = req.tools.map((t) => ({
       type: "function",

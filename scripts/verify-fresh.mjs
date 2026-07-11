@@ -93,24 +93,28 @@ const dumpState = (page) =>
     }
   })
 
-// ---------- phase 1: no key ----------
+// ---------- phase 1: no key → first-run welcome ----------
 {
   const { ctx, page, orRequests } = await newPage(false)
   await page.goto(`${BASE}/`, { waitUntil: "networkidle" })
   await page.waitForTimeout(1500)
   console.log("PHASE 1 (no key) boot state:", JSON.stringify(await dumpState(page)))
+  await page.getByText("Welcome to Kiln").waitFor({ timeout: 5000 })
+  console.log("welcome screen shown:", true)
+  console.log(
+    "composer hidden without keys:",
+    (await page.getByPlaceholder("Message Kiln…").count()) === 0,
+  )
+  await page.screenshot({ path: "shots/v1-welcome-nokeys.png" })
   await page.getByLabel("Open menu").click()
   await page.waitForTimeout(400)
   console.log("sidebar empty-state visible:", (await page.getByText("No chats yet").count()) > 0)
   await page.keyboard.press("Escape")
   await page.waitForTimeout(300)
-  await page.getByText("Choose model").click()
-  await page.waitForTimeout(1500)
-  await page.screenshot({ path: "shots/v1-nokey-picker.png" })
-  console.log(
-    "key hint shown:",
-    (await page.getByText("Add an API key in Settings").count()) > 0,
-  )
+  // the CTA leads to settings
+  await page.getByRole("button", { name: "Add API keys" }).click()
+  await page.getByText("Providers").waitFor({ timeout: 5000 })
+  console.log("CTA navigates to settings:", true)
   console.log("provider requests made WITHOUT a key:", orRequests.length, orRequests)
   await ctx.close()
 }

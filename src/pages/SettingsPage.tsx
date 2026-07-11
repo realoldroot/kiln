@@ -264,6 +264,42 @@ function ToggleRow({
   )
 }
 
+// No sync backend exists yet; the section stays hidden so it can't confuse.
+const SHOW_SERVER_SECTION = false
+
+function SavedIndicator() {
+  const [state, setState] = useState<"idle" | "saving" | "saved">("idle")
+  useEffect(() => {
+    let t1: ReturnType<typeof setTimeout>
+    let t2: ReturnType<typeof setTimeout>
+    const unsub = useSettings.subscribe(() => {
+      setState("saving")
+      clearTimeout(t1)
+      clearTimeout(t2)
+      t1 = setTimeout(() => {
+        setState("saved")
+        t2 = setTimeout(() => setState("idle"), 2000)
+      }, 600)
+    })
+    return () => {
+      unsub()
+      clearTimeout(t1)
+      clearTimeout(t2)
+    }
+  }, [])
+  if (state === "idle") return null
+  return (
+    <span className="ml-auto mr-2 flex items-center gap-1.5 text-[12px] text-muted-foreground">
+      {state === "saving" ? (
+        <Loader2Icon className="size-3.5 animate-spin" />
+      ) : (
+        <CheckIcon className="size-3.5 text-primary" />
+      )}
+      {state === "saving" ? "Saving…" : "Saved"}
+    </span>
+  )
+}
+
 export default function SettingsPage() {
   const navigate = useNavigate()
   const s = useSettings()
@@ -283,10 +319,14 @@ export default function SettingsPage() {
             <ArrowLeftIcon className="size-5" />
           </Button>
           <h1 className="text-[16px] font-semibold">Settings</h1>
+          <SavedIndicator />
         </div>
       </header>
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-3 pb-16">
+        <p className="px-1 text-[12px] text-muted-foreground">
+          Changes save to this device automatically.
+        </p>
         <Section
           icon={<KeyIcon className="size-4.5" />}
           title="Providers"
@@ -571,34 +611,39 @@ export default function SettingsPage() {
           </p>
         </Section>
 
-        <Section
-          icon={<ServerIcon className="size-4.5" />}
-          title="Server (optional)"
-          description="Kiln runs fully on-device. Add a server to push chats to it."
-        >
-          <div className="space-y-1.5">
-            <Label className="text-[13px]">Server URL</Label>
-            <Input
-              value={s.syncUrl}
-              onChange={(e) => s.set({ syncUrl: e.target.value.trim() })}
-              placeholder="https://kiln.example.com/api"
-              className="font-mono text-[16px] md:text-[13px]"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-[13px]">Auth token</Label>
-            <Input
-              value={s.syncToken}
-              onChange={(e) => s.set({ syncToken: e.target.value.trim() })}
-              placeholder="optional bearer token"
-              className="font-mono text-[16px] md:text-[13px]"
-            />
-          </div>
-          <p className="text-[12px] text-muted-foreground">
-            “Send to server” in a chat’s menu POSTs the chat JSON to{" "}
-            <code className="font-mono">{"{url}"}/chats</code>.
-          </p>
-        </Section>
+        {/* Hidden until a sync backend actually exists — flip SHOW_SERVER_SECTION
+            to bring it back. The plumbing (lib/sync.ts, "Send to server" menu
+            items gated on syncUrl) is all still wired up. */}
+        {SHOW_SERVER_SECTION && (
+          <Section
+            icon={<ServerIcon className="size-4.5" />}
+            title="Server (optional)"
+            description="Kiln runs fully on-device. Add a server to push chats to it."
+          >
+            <div className="space-y-1.5">
+              <Label className="text-[13px]">Server URL</Label>
+              <Input
+                value={s.syncUrl}
+                onChange={(e) => s.set({ syncUrl: e.target.value.trim() })}
+                placeholder="https://kiln.example.com/api"
+                className="font-mono text-[16px] md:text-[13px]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[13px]">Auth token</Label>
+              <Input
+                value={s.syncToken}
+                onChange={(e) => s.set({ syncToken: e.target.value.trim() })}
+                placeholder="optional bearer token"
+                className="font-mono text-[16px] md:text-[13px]"
+              />
+            </div>
+            <p className="text-[12px] text-muted-foreground">
+              “Send to server” in a chat’s menu POSTs the chat JSON to{" "}
+              <code className="font-mono">{"{url}"}/chats</code>.
+            </p>
+          </Section>
+        )}
 
         <Section icon={<DatabaseIcon className="size-4.5" />} title="Data">
           <div className="flex flex-wrap gap-2">

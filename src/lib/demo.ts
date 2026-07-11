@@ -20,29 +20,30 @@ const OL = (
   opts: Partial<ModelInfo> = {},
 ): ModelInfo => ({ id, name: id, provider: "ollama", ctx, tools: true, ...opts })
 
+const EFFORTS_FULL = ["xhigh", "high", "medium", "low"]
 const MODELS: { openrouter: ModelInfo[]; ollama: ModelInfo[]; fetchedAt: number } = {
   fetchedAt: now,
   openrouter: [
-    OR("anthropic/claude-sonnet-4.5", "Claude Sonnet 4.5", 1_000_000, { vision: true, reasoning: true, pricing: { prompt: 3, completion: 15 } }),
-    OR("anthropic/claude-opus-4.1", "Claude Opus 4.1", 200_000, { vision: true, reasoning: true, pricing: { prompt: 15, completion: 75 } }),
-    OR("anthropic/claude-haiku-4.5", "Claude Haiku 4.5", 200_000, { vision: true, reasoning: true, pricing: { prompt: 1, completion: 5 } }),
-    OR("openai/gpt-5.1", "GPT-5.1", 400_000, { vision: true, reasoning: true, pricing: { prompt: 1.25, completion: 10 } }),
-    OR("openai/gpt-5-mini", "GPT-5 Mini", 400_000, { vision: true, reasoning: true, pricing: { prompt: 0.25, completion: 2 } }),
-    OR("google/gemini-2.5-pro", "Gemini 2.5 Pro", 1_048_576, { vision: true, reasoning: true, pricing: { prompt: 1.25, completion: 10 } }),
-    OR("google/gemini-2.5-flash", "Gemini 2.5 Flash", 1_048_576, { vision: true, reasoning: true, pricing: { prompt: 0.3, completion: 2.5 } }),
+    OR("anthropic/claude-sonnet-4.5", "Claude Sonnet 4.5", 1_000_000, { vision: true, reasoning: true, efforts: EFFORTS_FULL, defaultEffort: "medium", pricing: { prompt: 3, completion: 15 } }),
+    OR("anthropic/claude-opus-4.1", "Claude Opus 4.1", 200_000, { vision: true, reasoning: true, efforts: EFFORTS_FULL, defaultEffort: "medium", pricing: { prompt: 15, completion: 75 } }),
+    OR("anthropic/claude-haiku-4.5", "Claude Haiku 4.5", 200_000, { vision: true, reasoning: true, efforts: EFFORTS_FULL, defaultEffort: "medium", pricing: { prompt: 1, completion: 5 } }),
+    OR("openai/gpt-5.1", "GPT-5.1", 400_000, { vision: true, reasoning: true, efforts: [...EFFORTS_FULL, "none"], defaultEffort: "medium", pricing: { prompt: 1.25, completion: 10 } }),
+    OR("openai/gpt-5-mini", "GPT-5 Mini", 400_000, { vision: true, reasoning: true, efforts: [...EFFORTS_FULL, "none"], defaultEffort: "medium", pricing: { prompt: 0.25, completion: 2 } }),
+    OR("google/gemini-2.5-pro", "Gemini 2.5 Pro", 1_048_576, { vision: true, reasoning: true, efforts: ["high", "medium", "low"], defaultEffort: "high", pricing: { prompt: 1.25, completion: 10 } }),
+    OR("google/gemini-2.5-flash", "Gemini 2.5 Flash", 1_048_576, { vision: true, reasoning: true, reasoningToggle: true, pricing: { prompt: 0.3, completion: 2.5 } }),
     OR("google/gemini-2.5-flash-image", "Gemini 2.5 Flash Image (Nano Banana)", 32_768, { vision: true, imageOutput: true, pricing: { prompt: 0.3, completion: 2.5 } }),
     OR("openai/gpt-image-1", "GPT Image 1", 32_000, { vision: true, imageOutput: true, pricing: { prompt: 5, completion: 40 } }),
     OR("meta-llama/llama-4-maverick", "Llama 4 Maverick", 1_048_576, { vision: true, pricing: { prompt: 0.15, completion: 0.6 } }),
     OR("mistralai/mistral-large-2411", "Mistral Large", 131_072, { pricing: { prompt: 2, completion: 6 } }),
-    OR("deepseek/deepseek-chat-v3.1", "DeepSeek V3.1", 163_840, { reasoning: true, pricing: { prompt: 0.27, completion: 1 } }),
+    OR("deepseek/deepseek-chat-v3.1", "DeepSeek V3.1", 163_840, { reasoning: true, reasoningToggle: true, pricing: { prompt: 0.27, completion: 1 } }),
     OR("x-ai/grok-4", "Grok 4", 256_000, { vision: true, reasoning: true, pricing: { prompt: 3, completion: 15 } }),
     OR("qwen/qwen3-coder", "Qwen3 Coder", 262_144, { pricing: { prompt: 0.22, completion: 0.95 } }),
     OR("moonshotai/kimi-k2", "Kimi K2", 131_072, { pricing: { prompt: 0.55, completion: 2.2 } }),
   ],
   ollama: [
-    OL("gpt-oss:120b", 131_072, { reasoning: true }),
-    OL("gpt-oss:20b", 131_072, { reasoning: true }),
-    OL("deepseek-v3.1:671b", 163_840, { reasoning: true }),
+    OL("gpt-oss:120b", 131_072, { reasoning: true, efforts: ["high", "medium", "low"], defaultEffort: "medium" }),
+    OL("gpt-oss:20b", 131_072, { reasoning: true, efforts: ["high", "medium", "low"], defaultEffort: "medium" }),
+    OL("deepseek-v3.1:671b", 163_840, { reasoning: true, reasoningToggle: true }),
     OL("qwen3-coder:480b", 262_144),
     OL("kimi-k2:1t", 131_072),
     OL("gemma3:27b", 131_072, { vision: true }),
@@ -74,15 +75,14 @@ function paintDemoImage(hueA: number, hueB: number, label: string): string {
 }
 
 export async function seedDemo(): Promise<void> {
-  const { useModels, modelsSignature } = await import("@/stores/models")
-  const cache = { ...MODELS, signature: modelsSignature() }
-  localStorage.setItem("amber-models-cache", JSON.stringify(cache))
-  useModels.setState(cache)
+  const { useSettings } = await import("@/stores/settings")
 
-  const settingsRaw = localStorage.getItem("amber-settings")
-  const settings = settingsRaw ? JSON.parse(settingsRaw) : { state: {}, version: 0 }
-  settings.state = {
-    ...settings.state,
+  // Demo keys so the app shows the normal chat UI instead of first-run
+  // onboarding (persist middleware writes these to localStorage for us).
+  const st = useSettings.getState()
+  useSettings.setState({
+    openrouterKey: st.openrouterKey || "sk-or-demo-not-a-real-key",
+    ollamaKey: st.ollamaKey || "demo-not-a-real-key",
     lastModel: { provider: "openrouter", model: "anthropic/claude-sonnet-4.5" },
     lastImageModel: { provider: "openrouter", model: "google/gemini-2.5-flash-image" },
     favoriteModels: [
@@ -90,8 +90,8 @@ export async function seedDemo(): Promise<void> {
       "ollama:gpt-oss:120b",
       "openrouter:google/gemini-2.5-flash",
     ],
-    skills: settings.state.skills?.length
-      ? settings.state.skills
+    skills: st.skills.length
+      ? st.skills
       : [
           {
             id: uid(),
@@ -110,8 +110,14 @@ export async function seedDemo(): Promise<void> {
             enabled: false,
           },
         ],
-  }
-  localStorage.setItem("amber-settings", JSON.stringify(settings))
+  })
+
+  // Model cache signature must match the (now keyed) settings, or the next
+  // refresh would wipe the demo catalogue.
+  const { useModels, modelsSignature } = await import("@/stores/models")
+  const cache = { ...MODELS, signature: modelsSignature() }
+  localStorage.setItem("amber-models-cache", JSON.stringify(cache))
+  useModels.setState(cache)
 
   if ((await db.chats.count()) > 0) return
 

@@ -38,9 +38,12 @@ Built with React 19, Vite 8, Tailwind CSS 4, shadcn/ui, Dexie and Workbox.
   reasoning / image output). API keys are stored in localStorage on the
   device and go only to the provider. Adding or changing a key refreshes
   the model list immediately.
-- **Reasoning effort** — Auto/Low/Medium/High selector for reasoning models
-  (OpenRouter `reasoning.effort`, Ollama `think` levels); thinking traces
-  shown in a collapsible "Thought for Ns" block.
+- **Reasoning effort** — the effort menu shows exactly what each model
+  supports, straight from provider metadata: OpenRouter's per-model
+  `reasoning.supported_efforts` (e.g. max/xhigh/high/medium/low/none),
+  on/off toggles for models where thinking is optional but has no levels,
+  and Ollama `think` levels for gpt-oss (on/off for other thinking models).
+  Thinking traces show in a collapsible "Thought for Ns" block.
 - **Per-message model tracking** — switch model or effort mid-chat; every
   assistant message records the provider/model/effort that produced it.
   The last-used model is remembered for the next chat.
@@ -148,6 +151,10 @@ Visit `http://localhost:5173/?seed=1` to load demo chats/models so you can
 explore the UI without API keys.
 
 ## Server hand-off contract
+
+> The Settings UI for this is currently hidden (`SHOW_SERVER_SECTION` in
+> `SettingsPage.tsx`) because no backend exists yet — the plumbing below is
+> implemented and ready for when one does.
 
 "Send to server" POSTs to `{Server URL}/chats` with
 `Authorization: Bearer {token}` (if set) and body:

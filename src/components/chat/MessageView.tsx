@@ -12,6 +12,7 @@ import {
 } from "lucide-react"
 import type { Message } from "@/lib/types"
 import { splitContent, type ArtifactBlock } from "@/lib/artifacts"
+import { effortCaption } from "@/lib/effort"
 import { activeVersionIndex, versionCount } from "@/lib/versions"
 import { cn } from "@/lib/utils"
 import { useStream } from "@/stores/stream"
@@ -28,7 +29,9 @@ function ModelCaption({ msg }: { msg: Message }) {
   return (
     <span className="truncate">
       {name}
-      {msg.effort && msg.effort !== "auto" ? ` · ${msg.effort}` : ""}
+      {msg.effort && msg.effort !== "auto"
+        ? ` · ${effortCaption(msg.effort)}`
+        : ""}
     </span>
   )
 }

@@ -220,15 +220,30 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <div className="space-y-0.5 px-2 pt-2">
         <button
           onClick={() => go("/")}
-          className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13.5px] font-medium text-primary hover:bg-accent/60"
+          className={cn(
+            "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13.5px] font-medium text-primary hover:bg-accent/60",
+            location.pathname === "/" && "bg-accent",
+          )}
         >
           <SquarePenIcon className="size-4" /> New chat
         </button>
         <button
           onClick={() => go("/images")}
-          className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13.5px] font-medium hover:bg-accent/60"
+          className={cn(
+            "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13.5px] font-medium hover:bg-accent/60",
+            location.pathname.startsWith("/images") &&
+              "bg-accent text-primary",
+          )}
         >
-          <ImageIcon className="size-4 text-muted-foreground" /> Images
+          <ImageIcon
+            className={cn(
+              "size-4",
+              location.pathname.startsWith("/images")
+                ? "text-primary"
+                : "text-muted-foreground",
+            )}
+          />{" "}
+          Images
         </button>
       </div>
 

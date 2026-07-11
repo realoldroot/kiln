@@ -1,6 +1,13 @@
 export type ProviderId = "openrouter" | "ollama"
 
-export type Effort = "auto" | "low" | "medium" | "high"
+/**
+ * Reasoning effort. "auto" = don't send anything (model default). Other
+ * values come from the provider per model: OpenRouter supported_efforts
+ * ("max" | "xhigh" | "high" | "medium" | "low" | "minimal" | "none"),
+ * Ollama think levels ("high" | "medium" | "low"), or "on"/"off" for
+ * models where thinking can only be toggled.
+ */
+export type Effort = string
 
 export interface ModelRef {
   provider: ProviderId
@@ -16,6 +23,12 @@ export interface ModelInfo {
   reasoning?: boolean
   imageOutput?: boolean
   tools?: boolean
+  /** discrete effort levels this model accepts (provider-reported) */
+  efforts?: string[]
+  /** thinking can be switched on/off (but has no levels) */
+  reasoningToggle?: boolean
+  /** provider default effort, shown next to "Auto" */
+  defaultEffort?: string
   /** USD per million tokens */
   pricing?: { prompt?: number; completion?: number }
 }

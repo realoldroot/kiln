@@ -4,6 +4,7 @@ import {
   CloudUploadIcon,
   DownloadIcon,
   GhostIcon,
+  KeyIcon,
   MoreVerticalIcon,
   PencilIcon,
   ScissorsIcon,
@@ -64,6 +65,27 @@ function Greeting() {
   )
 }
 
+/** First-run state: no provider keys configured yet. */
+function Welcome() {
+  const navigate = useNavigate()
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 pb-16 text-center">
+      <img src="/icons/icon.svg" alt="" className="size-16 rounded-2xl shadow-md" />
+      <h2 className="mt-1 font-serif text-[26px] leading-snug">Welcome to Kiln</h2>
+      <p className="max-w-72 text-[14px] leading-relaxed text-muted-foreground">
+        A private AI chat that lives on your phone. Bring your own OpenRouter
+        or Ollama cloud key — your chats and keys never leave this device.
+      </p>
+      <Button className="mt-2 rounded-full" onClick={() => navigate("/settings")}>
+        <KeyIcon /> Add API keys
+      </Button>
+      <p className="text-[12px] text-muted-foreground/70">
+        Takes about a minute. Keys are stored only in this browser.
+      </p>
+    </div>
+  )
+}
+
 export default function ChatPage() {
   const { chatId } = useParams()
   const navigate = useNavigate()
@@ -72,6 +94,7 @@ export default function ChatPage() {
 
   const lastModel = useSettings((s) => s.lastModel)
   const lastEffort = useSettings((s) => s.lastEffort)
+  const hasKeys = useSettings((s) => !!s.openrouterKey || !!s.ollamaKey)
   const skills = useSettings((s) => s.skills)
   const defaultSkillIds = useMemo(
     () => skills.filter((sk) => sk.enabled).map((sk) => sk.id),
@@ -352,7 +375,11 @@ export default function ChatPage() {
           )}
 
           {!chatId && messages.length === 0 ? (
-            <Greeting />
+            hasKeys ? (
+              <Greeting />
+            ) : (
+              <Welcome />
+            )
           ) : (
             <div
               ref={scrollRef}
@@ -403,6 +430,7 @@ export default function ChatPage() {
             </div>
           )}
 
+          {(hasKeys || !!chatId) && (
           <div className="mx-auto w-full max-w-3xl">
             {ctxUsage !== null && ctxUsage >= 0.6 && !generating && (
               <div className="flex justify-end px-4 pb-1">
@@ -431,6 +459,7 @@ export default function ChatPage() {
               onSkillIdsChange={(ids) => void updateSkills(ids)}
             />
           </div>
+          )}
 
           <ArtifactViewer artifact={artifact} onClose={() => setArtifact(null)} />
         </>
