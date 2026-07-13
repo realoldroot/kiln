@@ -749,7 +749,7 @@ export default function SettingsPage() {
         </Section>
 
         <p className="pb-safe pt-2 text-center text-[11.5px] text-muted-foreground">
-          Kiln · local-first AI chat · v{__APP_VERSION__} ·{" "}
+          Kiln · v{__APP_VERSION__} ·{" "}
           <button
             className="underline underline-offset-2 hover:text-foreground"
             onClick={() => setLicensesOpen(true)}
