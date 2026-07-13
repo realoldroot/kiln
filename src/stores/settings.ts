@@ -15,7 +15,6 @@ export interface Personalization {
 interface SettingsState {
   theme: ThemePref
   openrouterKey: string
-  openrouterBaseUrl: string
   ollamaKey: string
   /** "/api/ollama" (same-origin proxy, default) or a direct URL (e.g. LAN Ollama) */
   ollamaBaseUrl: string
@@ -52,7 +51,6 @@ export const useSettings = create<SettingsState>()(
     (set) => ({
       theme: "system",
       openrouterKey: "",
-      openrouterBaseUrl: "https://openrouter.ai/api/v1",
       ollamaKey: "",
       ollamaBaseUrl: "/api/ollama",
       tavilyKey: "",

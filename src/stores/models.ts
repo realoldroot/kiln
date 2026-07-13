@@ -20,7 +20,7 @@ interface ModelsCache {
 /** Models are only fetched for providers with a key configured. */
 export function modelsSignature(): string {
   const s = getSettings()
-  return `${s.openrouterKey ? 1 : 0}:${s.openrouterBaseUrl}:${s.ollamaKey ? 1 : 0}:${s.ollamaBaseUrl}`
+  return `${s.openrouterKey ? 1 : 0}:${s.ollamaKey ? 1 : 0}:${s.ollamaBaseUrl}`
 }
 
 function loadCache(): ModelsCache {

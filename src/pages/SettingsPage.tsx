@@ -388,25 +388,6 @@ export default function SettingsPage() {
             placeholder="sk-or-…"
             onVerify={() => checkOpenRouterKey(s.openrouterKey)}
           />
-          <div className="space-y-1.5">
-            <Label className="text-[13px]">OpenRouter endpoint</Label>
-            <Input
-              value={s.openrouterBaseUrl}
-              onChange={(e) => s.set({ openrouterBaseUrl: e.target.value.trim() })}
-              placeholder="https://openrouter.ai/api/v1"
-              className="font-mono text-[16px] md:text-[13px]"
-            />
-            <p className="text-[12px] leading-snug text-muted-foreground">
-              Change this if you are using a proxy or a compatible API. Defaults to{" "}
-              <button
-                className="font-mono text-primary underline underline-offset-2"
-                onClick={() => s.set({ openrouterBaseUrl: "https://openrouter.ai/api/v1" })}
-              >
-                https://openrouter.ai/api/v1
-              </button>
-              .
-            </p>
-          </div>
           <KeyInput
             label="Ollama API key"
             value={s.ollamaKey}

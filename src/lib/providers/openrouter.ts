@@ -8,9 +8,7 @@ import type {
 import { getSettings } from "@/stores/settings"
 import { cleanKey } from "@/lib/utils"
 
-function baseUrl(): string {
-  return getSettings().openrouterBaseUrl || "https://openrouter.ai/api/v1"
-}
+const BASE = "https://openrouter.ai/api/v1"
 
 function headers(): Record<string, string> {
   return {
@@ -22,7 +20,7 @@ function headers(): Record<string, string> {
 }
 
 export async function fetchOpenRouterModels(): Promise<ModelInfo[]> {
-  const res = await fetch(`${baseUrl()}/models`)
+  const res = await fetch(`${BASE}/models`)
   if (!res.ok) throw new Error(`OpenRouter models: HTTP ${res.status}`)
   const json = await res.json()
   const models: ModelInfo[] = (json.data ?? []).map((m: any): ModelInfo => {
@@ -57,7 +55,7 @@ export async function fetchOpenRouterModels(): Promise<ModelInfo[]> {
 
 export async function checkOpenRouterKey(key: string): Promise<string> {
   // GET /key is the documented key-info endpoint (/auth/key is legacy)
-  const res = await fetch(`${baseUrl()}/key`, {
+  const res = await fetch(`${BASE}/key`, {
     headers: { Authorization: `Bearer ${cleanKey(key)}` },
   })
   if (!res.ok) {
@@ -131,7 +129,7 @@ export async function* streamOpenRouter(
   }
   if (req.imageOutput) body.modalities = ["image", "text"]
 
-  const res = await fetch(`${baseUrl()}/chat/completions`, {
+  const res = await fetch(`${BASE}/chat/completions`, {
     method: "POST",
     headers: headers(),
     body: JSON.stringify(body),
